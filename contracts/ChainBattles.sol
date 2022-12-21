@@ -17,8 +17,15 @@ contract ChainBattles is ERC721URIStorage {
     using Strings for uint256;
     using Counters for Counters.Counter;
 
+    struct Warrior {
+        uint256 level;
+        uint256 strength;
+        uint256 speed;
+        uint256 health;
+    }
+    
     Counters.Counter private _tokenIds;
-    mapping(uint256 => uint256) public tokenIdToLevels;
+    mapping(uint256 => Warrior) public tokenIdToCharacter;
 
     constructor() ERC721 ("Chain Battles", "CBTLS") {
 
@@ -54,8 +61,42 @@ contract ChainBattles is ERC721URIStorage {
         @return The level of the token
     */
     function getLevels(uint256 tokenId) public view returns (string memory) {
-        uint256 levels = tokenIdToLevels[tokenId];
+        uint256 levels = tokenIdToCharacter[tokenId].level;
+
         return levels.toString();
+    }
+
+    /**
+        @notice Gets the health of a given tokenId
+        @param tokenId The id of the token to obtain the health of
+        @return The health of the token
+    */
+    function getHealth(uint256 tokenId) public view returns(string memory) {
+        uint256 health = tokenIdToCharacter[tokenId].health;
+
+        return health.toString();
+    }
+
+    /**
+        @notice Gets the strength of a given tokenId
+        @param tokenId The id of the token to obtain the strength of
+        @return The strength of the token
+    */
+    function getStrength(uint256 tokenId) public view returns(string memory) {
+        uint256 strength = tokenIdToCharacter[tokenId].strength;
+
+        return strength.toString();
+    }
+
+    /**
+        @notice Gets the speed of a given tokenId
+        @param tokenId The id of the token to obtain the speed of
+        @return The speed of the token
+    */
+    function getSpeed(uint256 tokenId) public view returns(string memory) {
+        uint256 speed = tokenIdToCharacter[tokenId].speed;
+
+        return speed.toString();
     }
 
     /**
@@ -66,12 +107,28 @@ contract ChainBattles is ERC721URIStorage {
     */
     function getTokenURI(uint256 tokenId) public view returns (string memory){
         bytes memory dataURI = abi.encodePacked(
+
             '{',
                 '"name": "Chain Battles #', tokenId.toString(), '",',
                 '"description": "Battles on chain",',
-                '"image": "', generateCharacter(tokenId), '"',
+                '"image": "', generateCharacter(tokenId), '",',
+                '"attributes": [',
+                    '{',
+                        '"trait_type": "health",',
+                        '"value": "', getHealth(tokenId), '"',
+                    '},',
+                    '{',
+                        '"trait_type": "strength",',
+                        '"value": "', getStrength(tokenId), '"',
+                    '},',
+                    '{',
+                        '"trait_type": "speed",',
+                        '"value": "', getSpeed(tokenId), '"',
+                    '}',
+                ']',
             '}'
         );
+        
         return string(
             abi.encodePacked(
                 "data:application/json;base64,",
@@ -88,7 +145,12 @@ contract ChainBattles is ERC721URIStorage {
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
         _safeMint(msg.sender, newItemId);
-        tokenIdToLevels[newItemId] = 0;
+        
+        tokenIdToCharacter[newItemId].level = 0;
+        tokenIdToCharacter[newItemId].health = 10;
+        tokenIdToCharacter[newItemId].strength = 6;
+        tokenIdToCharacter[newItemId].speed = 3;
+
         _setTokenURI(newItemId, getTokenURI(newItemId));
     }
 
@@ -99,8 +161,13 @@ contract ChainBattles is ERC721URIStorage {
     function train(uint256 tokenId) public {
         require(_exists(tokenId), "Please use an existing token");
         require(ownerOf(tokenId) == msg.sender, "You must own this token to train it");
-        uint256 currentLevel = tokenIdToLevels[tokenId];
-        tokenIdToLevels[tokenId] = currentLevel + 1;
+        uint256 currentLevel = tokenIdToCharacter[tokenId].level;
+        tokenIdToCharacter[tokenId].level = currentLevel + 1;
+
+        tokenIdToCharacter[tokenId].health += uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, tokenId.toString()))) % 10;
+        tokenIdToCharacter[tokenId].strength += uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, tokenId.toString()))) % 6;
+        tokenIdToCharacter[tokenId].speed += uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, tokenId.toString()))) % 3;
+
         _setTokenURI(tokenId, getTokenURI(tokenId));
     }
 }
