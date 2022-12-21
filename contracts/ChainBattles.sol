@@ -7,6 +7,12 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 
+/**
+    @title ChainBattles
+    @author Xander Palmer
+    @notice NFT Contract to mint and interact with ChainBattle NFTs
+    @dev Details converted into Base64
+*/
 contract ChainBattles is ERC721URIStorage {
     using Strings for uint256;
     using Counters for Counters.Counter;
@@ -18,6 +24,12 @@ contract ChainBattles is ERC721URIStorage {
 
     }
 
+    /**
+        @notice Generates and encodes the svg image of the token
+        @dev Encodes image as xml into Base64
+        @param tokenId The id of the token to obtain the image of
+        @return The encoded image to display for the token
+    */
     function generateCharacter(uint256 tokenId) public view returns(string memory){
 
         bytes memory svg = abi.encodePacked(
@@ -36,11 +48,22 @@ contract ChainBattles is ERC721URIStorage {
         );
     }
 
+    /**
+        @notice Gets the level of a given tokenId
+        @param tokenId The id of the token to obtain the level of
+        @return The level of the token
+    */
     function getLevels(uint256 tokenId) public view returns (string memory) {
         uint256 levels = tokenIdToLevels[tokenId];
         return levels.toString();
     }
 
+    /**
+        @notice Gets the information of the given token
+        @dev Gets the json of the token with its information
+        @param tokenId The id of the token to obtain the data of
+        @return The information of the token in json
+    */
     function getTokenURI(uint256 tokenId) public view returns (string memory){
         bytes memory dataURI = abi.encodePacked(
             '{',
@@ -57,6 +80,10 @@ contract ChainBattles is ERC721URIStorage {
         );
     }
 
+    /**
+        @notice Mints a NFT and sends it to the user
+        @dev Calls ERC721's _safeMint and updates URI with SVG
+    */
     function mint() public {
         _tokenIds.increment();
         uint256 newItemId = _tokenIds.current();
@@ -65,6 +92,10 @@ contract ChainBattles is ERC721URIStorage {
         _setTokenURI(newItemId, getTokenURI(newItemId));
     }
 
+    /**
+        @notice Levels up a token given the sender owners it
+        @param tokenId The id of the token to train
+    */
     function train(uint256 tokenId) public {
         require(_exists(tokenId), "Please use an existing token");
         require(ownerOf(tokenId) == msg.sender, "You must own this token to train it");
